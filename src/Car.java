@@ -1,10 +1,10 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
+import java.nio.file.StandardOpenOption;
+import java.util.List;
+import java.util.Objects;
 
 public class Car implements Comparable<Car> {
     private String make;
@@ -51,8 +51,8 @@ public class Car implements Comparable<Car> {
         Path desktopPath = Paths.get(System.getProperty("user.home"), "Desktop");
         Path filePath = desktopPath.resolve(fileName);
 
-        try (BufferedWriter writer = Files.newBufferedWriter(filePath)) {
-            writer.write(carAttributes);
+        try {
+            Files.write(filePath, carAttributes.getBytes(), StandardOpenOption.CREATE);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -62,13 +62,17 @@ public class Car implements Comparable<Car> {
         return car.getYear()+","+car.getMake()+","+car.getModel();
     }
 
-    public static Car deserializeFromCsv(String fileName){
+    public static Car deserializeFromCsv(String fileName) {
         Path desktopPath = Paths.get(System.getProperty("user.home"), "Desktop");
         Path filePath = desktopPath.resolve(fileName);
 
-        try (BufferedReader reader = Files.newBufferedReader(filePath)) {
-            String carData = reader.readLine();
-            String[] carAttributes = carData.split(",");
+        try {
+            List<String> lines = Files.readAllLines(filePath);
+            if (lines.size() != 1) {
+                throw new IllegalArgumentException("Invalid data format");
+            }
+
+            String[] carAttributes = lines.get(0).split(",");
 
             if (carAttributes.length != 3) {
                 throw new IllegalArgumentException("Invalid data format");
@@ -87,14 +91,21 @@ public class Car implements Comparable<Car> {
         return null;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Car car = (Car) o;
+        return Objects.equals(make, car.make) && Objects.equals(model, car.model) && Objects.equals(year, car.year);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(make, model, year);
+    }
+
     public int compareTo(Car other) {
-        if (this.year.compareTo(other.year)!=0){
-            return -1;
-        }
-        if (this.make.compareTo(other.make)!=0){
-            return -1;
-        }
-        return this.model.compareTo(other.model);
+        return this.year.compareTo(other.year);
     }
 }
 
